@@ -1,4 +1,9 @@
 import { GetStaticProps } from 'next';
+import Prismic from '@prismicio/client';
+import { format } from 'date-fns';
+import ptBR from 'date-fns/locale/pt-BR';
+
+import { FiCalendar, FiUser } from 'react-icons/fi';
 
 import { getPrismicClient } from '../services/prismic';
 
@@ -24,13 +29,57 @@ interface HomeProps {
   postsPagination: PostPagination;
 }
 
-// export default function Home() {
-//   // TODO
-// }
+export default function Home({ postsPagination }): JSX.Element {
+  const { posts } = postsPagination;
 
-// export const getStaticProps = async () => {
-//   // const prismic = getPrismicClient();
-//   // const postsResponse = await prismic.query(TODO);
+  return (
+    <div className={styles.contentContainer}>
+      {posts.map(post => {
+        return (
+          <div className={styles.post}>
+            <h2>{post.data.title}</h2>
+            <p>{post.data.subtitle}</p>
+            <div className={styles.postDetails}>
+              <div className={styles.postItem}>
+                <FiCalendar />
+                <span>
+                  {format(
+                    new Date(post.first_publication_date),
+                    'dd MMM  yyyy'
+                  )}
+                </span>
+              </div>
+              <div className={styles.postItem}>
+                <FiUser />
+                <span>{post.data.author}</span>
+              </div>
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
 
-//   // TODO
-// };
+export const getStaticProps: GetStaticProps = async () => {
+  const prismic = getPrismicClient();
+  const postsPagination = await prismic.query(
+    Prismic.Predicates.at('document.type', 'posts')
+  );
+
+  const posts = postsPagination.results.map(post => {
+    return {
+      uid: post.uid,
+      first_publication_date: post.first_publication_date,
+      data: {
+        title: post.data.title,
+        subtitle: post.data.subtitle,
+        author: post.data.author,
+      },
+    };
+  });
+
+  return {
+    props: { postsPagination: { next_page: postsPagination.next_page, posts } },
+  };
+};
