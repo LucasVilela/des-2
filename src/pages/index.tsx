@@ -29,14 +29,13 @@ interface HomeProps {
   postsPagination: PostPagination;
 }
 
-export default function Home({ postsPagination }): JSX.Element {
-  const { posts } = postsPagination;
-
+export default function Home({ postsPagination }: HomeProps): JSX.Element {
+  const { results } = postsPagination;
   return (
     <div className={styles.contentContainer}>
-      {posts.map(post => {
+      {results.map(post => {
         return (
-          <div className={styles.post}>
+          <div key={post.first_publication_date} className={styles.post}>
             <h2>{post.data.title}</h2>
             <p>{post.data.subtitle}</p>
             <div className={styles.postDetails}>
@@ -45,7 +44,7 @@ export default function Home({ postsPagination }): JSX.Element {
                 <span>
                   {format(
                     new Date(post.first_publication_date),
-                    'dd MMM  yyyy'
+                    'dd mmm  yyyy'
                   )}
                 </span>
               </div>
@@ -63,11 +62,11 @@ export default function Home({ postsPagination }): JSX.Element {
 
 export const getStaticProps: GetStaticProps = async () => {
   const prismic = getPrismicClient();
-  const postsPagination = await prismic.query(
+  const postsResponse = await prismic.query(
     Prismic.Predicates.at('document.type', 'posts')
   );
 
-  const posts = postsPagination.results.map(post => {
+  const posts = postsResponse.results.map(post => {
     return {
       uid: post.uid,
       first_publication_date: post.first_publication_date,
@@ -80,6 +79,6 @@ export const getStaticProps: GetStaticProps = async () => {
   });
 
   return {
-    props: { postsPagination: { next_page: postsPagination.next_page, posts } },
+    props: { postsPagination: { next_page: postsResponse.next_page, posts } },
   };
 };
